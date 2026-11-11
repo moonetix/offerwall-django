@@ -1,0 +1,42 @@
+{% extends "rewards/base.html" %}
+{% block title %}Earn coins{% endblock %}
+{% block content %}
+  <h1>Earn coins</h1>
+  <p class="muted">Complete offers from our partners to earn coins. Most rewards arrive within minutes of the advertiser confirming the offer. A reward can be taken back if the advertiser reverses it.</p>
+
+  {% if not wall_url %}
+    <form method="post" action="{% url 'earn-age' %}" class="card">
+      {% csrf_token %}
+      <p>Offers are only for users who are 16 or older. Users under 18 need a parent's permission.</p>
+      <p><label><input type="checkbox" name="age_16_or_older" value="1" required> I am 16 or older</label></p>
+      {% if age_error %}<p class="error">Please confirm your age to continue.</p>{% endif %}
+      <button type="submit">Continue</button>
+    </form>
+  {% else %}
+    {# Django escapes the & in the link, which is correct inside an HTML attribute. Never mark it safe. #}
+    <iframe title="Earn coins" src="{{ wall_url }}"
+            style="border:0;width:100%;height:calc(100vh - 64px)"></iframe>
+    <p class="muted">Follow your offers in My offers at the top of the offerwall. Report a missing reward there.</p>
+  {% endif %}
+
+  <section class="card">
+    <h2>Recent rewards</h2>
+    {% if recent %}
+      <table>
+        <thead><tr><th>Date</th><th>Offer</th><th>Coins</th><th>Status</th></tr></thead>
+        <tbody>
+        {% for row, coins in recent %}
+          <tr>
+            <td>{{ row.created_at|date:"Y-m-d" }}</td>
+            <td>{{ row.offer_name|default:"Offer" }}</td>
+            <td>{{ coins }}</td>
+            <td>{{ row.get_status_display }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">No rewards yet.</p>
+    {% endif %}
+  </section>
+{% endblock %}

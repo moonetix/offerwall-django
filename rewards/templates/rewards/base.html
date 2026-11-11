@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{% endblock %} - Offerwall Django</title>
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #1a1f2b; background: #f6f7fb; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 64px; padding: 0 16px; background: #fff; border-bottom: 1px solid #e3e6ee; }
+    main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    h1 { font-size: 1.5rem; margin: 8px 0; }
+    .card { background: #fff; border: 1px solid #e3e6ee; border-radius: 8px; padding: 16px; margin: 16px 0; }
+    .balance { font-weight: 600; }
+    .muted { color: #4a5263; font-size: .9rem; }
+    .error { color: #b42318; }
+    button { font: inherit; padding: 8px 14px; border: 0; border-radius: 6px; background: #004abb; color: #fff; cursor: pointer; }
+    button.link { background: none; color: #004abb; padding: 0; }
+    input[type=text], input[type=password] { font: inherit; padding: 8px; width: 100%; max-width: 320px; box-sizing: border-box; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e3e6ee; }
+  </style>
+</head>
+<body>
+<header>
+  <strong>Offerwall Django</strong>
+  {% if user.is_authenticated %}
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      {% if balance %}<span class="balance">{{ balance }} coins</span>{% endif %}
+      <button type="submit" class="link">Sign out</button>
+    </form>
+  {% endif %}
+</header>
+<main>
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>
