@@ -5,13 +5,13 @@
 [![CI](https://github.com/moonetix/offerwall-django/actions/workflows/ci.yml/badge.svg)](https://github.com/moonetix/offerwall-django/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-docs.moonetix.com-004ABB)](https://docs.moonetix.com/postbacks)
-[![Get keys](https://img.shields.io/badge/get%20keys-moonetix.com-004ABB)](https://moonetix.com/register)
+[![Get keys](https://img.shields.io/badge/get%20keys-moonetix.com-004ABB)](https://moonetix.com/register?from=github-offerwall-django)
 [![Django 5.2 LTS](https://img.shields.io/badge/django-5.2%20LTS-092E20)](https://moonetix.com/academy/integrations/offerwall-postback-python)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB)](https://moonetix.com/integrations/website)
 
-A small Django project with the [Moonetix](https://moonetix.com) offerwall. The Earn page signs the offerwall link on the server for the signed-in user. The postback view verifies the hash with `hmac.compare_digest`, credits each `transaction_id` once, and takes back only what it credited. Moonetix is a pay-per-result affiliate network: your users earn your own currency by completing offers, and you earn per completed offer.
+A small Django project with the [Moonetix](https://moonetix.com) offerwall. The Earn page signs the offerwall link on the server for the signed-in user. The postback view verifies the hash with `hmac.compare_digest`, credits each `transaction_id` once, and takes back only what it credited. Moonetix is an affiliate network: your users earn your own currency by completing offers, and you earn per completed offer.
 
-> **Get your App ID and keys: sign up free at https://moonetix.com/register**
+> **Get your App ID and keys: sign up free at https://moonetix.com/register?from=github-offerwall-django**
 
 ## Design choices
 
@@ -64,7 +64,11 @@ Sign in at `/accounts/login/` and open `/earn/`.
 | `MOONETIX_APP_ID` | Dashboard, Offerwalls, your offerwall, Integration |
 | `MOONETIX_LINK_SALT` | Same place: the link hash salt. Signs offerwall links. |
 | `MOONETIX_POSTBACK_KEY` | Postback page: the postback secret key. Signs postbacks. |
-| `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS` | Your Django settings. Debug is off unless `DJANGO_DEBUG=1`. |
+| `DJANGO_SECRET_KEY` | Required unless `DJANGO_DEBUG=1`. Without it the app stops with `Set DJANGO_SECRET_KEY, or DJANGO_DEBUG=1 for local development.` |
+| `DJANGO_DEBUG` | Optional, default `0`. Only `1` turns debug on. |
+| `DJANGO_ALLOWED_HOSTS` | Optional, default `127.0.0.1,localhost`. Comma-separated. Add your real host in production. |
+| `DATABASE_PATH` | Optional, default `db.sqlite3` in the project folder. |
+| `MOONETIX_LOG_LEVEL` | Optional, default `INFO`. Level of the `moonetix` logger that records every postback. |
 
 Save this postback URL on the Postback page of your dashboard, with your real host. Keep the slash before `?`: without it, `APPEND_SLASH` answers 301 and Moonetix does not follow redirects.
 
@@ -134,6 +138,13 @@ curl -i "http://127.0.0.1:8000/moonetix/postback/?tx=$TX&user=$U&reward=$R&statu
 
 Run it twice: the balance goes up once. Set `S=2` and run it again: the 150 coins come back off.
 
+For a full pass over the view, run [postback-tester](https://github.com/moonetix/postback-tester) against `runserver`. It signs requests the way Moonetix does and sends a credit and its retry, three kinds of reversal, four forged or unsigned postbacks and five parallel copies of one credit. Its transaction IDs start with `test_`, which this view verifies and logs without crediting, so the run checks the signature handling and the answers; the Django tests above cover the balances.
+
+```bash
+npx github:moonetix/postback-tester --preset moonetix \
+  'http://127.0.0.1:8000/moonetix/postback/?tx={transaction_id}&user={user_id}&reward={reward}&status={status}&event={event_id}&payout={payout}&offer={offer_name}&hash={hash}' --user 1
+```
+
 ## Test it with Moonetix
 
 1. Deploy to a public https host and save the postback URL above on the Postback page.
@@ -141,6 +152,17 @@ Run it twice: the balance goes up once. Set `S=2` and run it again: the 150 coin
 3. Click **Send a test postback**, once with status 1 and once with status 2. The result window should show 200 and `Test postback: hash OK, nothing credited`. You can also send one from the Postback page.
 4. Every attempt and your server's answer are listed under Reports, Postbacks.
 5. Open the offerwall from a normal home or mobile connection. VPNs, proxies, Tor and data center networks see a block page.
+
+## Common failures
+
+| Reports, Postbacks shows | Cause | Fix |
+| --- | --- | --- |
+| `301` | The saved URL has no slash before `?`, or http redirects to https. Moonetix does not follow redirects. | Save the exact final URL: `https://yoursite.com/moonetix/postback/?...`. |
+| `400` with a Django error page | The host is not in `DJANGO_ALLOWED_HOSTS`. | Add your public host name. |
+| `403 Invalid hash` | Wrong key, a missing or repeated parameter, or a value changed on the way. | Use the postback secret key, not the link hash salt. Paste the logged URL into the [hash checker](https://moonetix.com/tools/postback-hash-checker). |
+| `400 Bad parameters` | Signed, but `tx` is empty or over 191 characters, `reward` is not a plain number, or `status` is not 1 or 2. | Map each macro to the parameter name shown in the postback URL above. |
+| `200 Unknown user, nothing credited` | The `user_id` is not a `user.pk` in this database, for example `test_user`. | Sign links with `user.pk`, or change `_find_user_pk()` if your keys are UUIDs. |
+| `500` | `MOONETIX_POSTBACK_KEY` is not set (`ImproperlyConfigured`) or the database write failed. Nothing is stored, and Moonetix retries. | Set the variable in the process that runs Django, not only in your shell. |
 
 ## References
 
@@ -153,7 +175,7 @@ Run it twice: the balance goes up once. Set `S=2` and run it again: the 150 coin
 
 ## Start with Moonetix
 
-**Get your App ID and keys: sign up free at https://moonetix.com/register**
+**Get your App ID and keys: sign up free at https://moonetix.com/register?from=github-offerwall-django**
 
 Every publisher application is reviewed by hand. Once you are approved, add your website as an app, set your currency name and rate, and paste the keys into `.env`.
 
@@ -168,8 +190,19 @@ Every publisher application is reviewed by hand. Once you are approved, add your
 | [discord-rewards-bot](https://github.com/moonetix/discord-rewards-bot) | Discord bot that rewards offer completions |
 | [moonetix-offerwall-wordpress](https://github.com/moonetix/moonetix-offerwall-wordpress) | WordPress plugin |
 | [offerwall-laravel](https://github.com/moonetix/offerwall-laravel) | Laravel Earn page and postback route |
-| [offerwall-django](https://github.com/moonetix/offerwall-django) | Django Earn page and postback view |
 | [offerwall-express](https://github.com/moonetix/offerwall-express) | Express 5 Earn page and postback route |
+| [offerwall-vue-nuxt](https://github.com/moonetix/offerwall-vue-nuxt) | Nuxt Earn page and postback server route |
+| [rewards-site-starter](https://github.com/moonetix/rewards-site-starter) | Starter for a rewards website |
+| [offerwall-flutter-example](https://github.com/moonetix/offerwall-flutter-example) | Flutter example app |
+| [postback-tester](https://github.com/moonetix/postback-tester) | Sends signed test postbacks and catches double credits, missed reversals and forged requests |
+| [signup-guard](https://github.com/moonetix/signup-guard) | Sign-up risk checks for Node.js and PHP: disposable emails, datacenter and Tor IPs |
+| [datacenter-ip-ranges](https://github.com/moonetix/datacenter-ip-ranges) | Daily cloud, Tor and iCloud Private Relay IP ranges from official feeds |
+| [offerwall-fraud-playbook](https://github.com/moonetix/offerwall-fraud-playbook) | Fraud playbook for offerwall and rewards publishers, with tested code |
+| [reward-economy-kit](https://github.com/moonetix/reward-economy-kit) | Integer points math: payout to points, bonuses, reversals, cash-out pricing |
+| [referral-engine](https://github.com/moonetix/referral-engine) | Referral codes, attribution and a clawback-safe commission ledger |
+| [gamification-kit](https://github.com/moonetix/gamification-kit) | Streaks, XP levels, quests and leaderboards that survive time zones and DST |
+| [affiliate-postback-macros](https://github.com/moonetix/affiliate-postback-macros) | Postback macros and signatures of tracking platforms and offerwalls |
+| [country-tiers](https://github.com/moonetix/country-tiers) | Tier 1, 2 and 3 countries as JSON and CSV, with helpers in JavaScript, PHP and Python |
 
 ## License
 
