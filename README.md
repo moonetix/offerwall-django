@@ -5,13 +5,12 @@
 [![CI](https://github.com/moonetix/offerwall-django/actions/workflows/ci.yml/badge.svg)](https://github.com/moonetix/offerwall-django/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-docs.moonetix.com-004ABB)](https://docs.moonetix.com/postbacks)
-[![Get keys](https://img.shields.io/badge/get%20keys-moonetix.com-004ABB)](https://moonetix.com/register?from=github-offerwall-django)
 [![Django 6.1](https://img.shields.io/badge/django-6.1-092E20)](https://moonetix.com/academy/integrations/offerwall-postback-python)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB)](https://moonetix.com/integrations/website)
 
 A small Django project with the [Moonetix](https://moonetix.com) offerwall. The Earn page signs the offerwall link on the server for the signed-in user. The postback view verifies the hash with `hmac.compare_digest`, credits each `transaction_id` once, and takes back only what it credited. Moonetix is an affiliate network: your users earn your own currency by completing offers, and you earn per completed offer.
 
-> **Get your App ID and keys: sign up free at https://moonetix.com/register?from=github-offerwall-django**
+> To run it you need your Moonetix App ID and keys: see [Get your keys](#get-your-keys).
 
 ## Design choices
 
@@ -173,9 +172,9 @@ npx github:moonetix/postback-tester --preset moonetix \
 - Docs: [Offerwall link](https://docs.moonetix.com/offerwall-link), [Postbacks](https://docs.moonetix.com/postbacks), [Credits and reversals](https://docs.moonetix.com/credits-and-reversals), [Testing](https://docs.moonetix.com/testing)
 - Free tools: [Offerwall link builder](https://moonetix.com/tools/offerwall-link-builder) and [Postback hash checker](https://moonetix.com/tools/postback-hash-checker)
 
-## Start with Moonetix
+## Get your keys
 
-**Get your App ID and keys: sign up free at https://moonetix.com/register?from=github-offerwall-django**
+Get your App ID and keys: sign up free at https://moonetix.com/register?from=github-offerwall-django
 
 Every publisher application is reviewed by hand. Once you are approved, add your website as an app, set your currency name and rate, and paste the keys into `.env`.
 
